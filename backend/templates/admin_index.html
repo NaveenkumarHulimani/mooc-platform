@@ -1,0 +1,24 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<h2>MOOC Platform — Admin Overview</h2>
+<div class="row" style="margin-top: 1rem;">
+  {% for label, value in [
+      ('Users', stats.users),
+      ('Courses', stats.courses),
+      ('Problems', stats.problems),
+      ('Submissions', stats.submissions),
+      ('Exam Attempts', stats.exam_attempts),
+      ('Certificates Issued', stats.certificates),
+  ] %}
+  <div class="col-md-2" style="margin-bottom: 1rem;">
+    <div class="panel panel-default" style="border:1px solid #ddd; border-radius:6px; padding:1rem; text-align:center;">
+      <div style="font-size:2rem; font-weight:bold;">{{ value }}</div>
+      <div style="color:#888;">{{ label }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<p>Use the navigation above to manage Problems, Users, Submissions, Exam Attempts, and Certificates.</p>
+<p><a href="{{ url_for('admin_auth.logout') }}">Log out</a></p>
+{% endblock %}
