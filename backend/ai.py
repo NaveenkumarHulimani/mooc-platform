@@ -4,15 +4,18 @@ import requests
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required
 
-from models import Problem
+from models import Problem, db
 
 ai_bp = Blueprint("ai", __name__, url_prefix="/api/ai")
 
 STUB_MESSAGE = (
-    "AI hints aren't configured yet. Add an OPENAI_API_KEY to backend/.env to enable "
+    "AI hints aren't configured yet. Add a GEMINI_API_KEY to backend/.env to enable "
     "real hints from an LLM. For now: re-read the problem statement and check your "
     "output format against the examples exactly (whitespace, line breaks, etc.)."
 )
+
+GEMINI_MODEL = "gemini-3.8-flash"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 
 @ai_bp.post("/hint")
@@ -22,8 +25,8 @@ def get_hint():
     problem_id = data.get("problem_id")
     code = data.get("code") or ""
 
-    problem = Problem.query.get(problem_id) if problem_id else None
-    api_key = os.environ.get("OPENAI_API_KEY")
+    problem = db.session.get(Problem, problem_id) if problem_id else None
+    api_key = os.environ.get("GEMINI_API_KEY")
 
     if not api_key:
         return jsonify({"hint": STUB_MESSAGE, "source": "stub"})
@@ -38,17 +41,15 @@ def get_hint():
 
     try:
         resp = requests.post(
-            "https://api.openai.com/v1/chat/completions",
-            headers={"Authorization": f"Bearer {api_key}", "content-type": "application/json"},
-            json={
-                "model": "gpt-4o-mini",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 150,
-            },
+            GEMINI_URL,
+            headers={"x-goog-api-key": api_key, "content-type": "application/json"},
+            json={"contents": [{"parts": [{"text": prompt}]}]},
             timeout=20,
         )
         resp.raise_for_status()
-        hint = resp.json()["choices"][0]["message"]["content"].strip()
-        return jsonify({"hint": hint, "source": "openai"})
-    except Exception:
+        payload = resp.json()
+        hint = payload["candidates"][0]["content"]["parts"][0]["text"].strip()
+        return jsonify({"hint": hint, "source": "gemini"})
+    except Exception as exc:
+        print(f"[ai.hint] Gemini request failed: {exc}")
         return jsonify({"hint": STUB_MESSAGE, "source": "stub"})

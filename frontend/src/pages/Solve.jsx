@@ -17,27 +17,43 @@ export default function Solve() {
   const [running, setRunning] = useState(false);
   const [hintLoading, setHintLoading] = useState(false);
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
   const [siblingIds, setSiblingIds] = useState({ prevId: null, nextId: null });
 
   useEffect(() => {
-    client.get(`/problems/${id}`).then((res) => {
-      setProblem(res.data);
-      setCode(res.data.starter_code);
+    // Reset per-problem state immediately so the previous problem's verdict/hint
+    // don't stay visible while the new problem is loading (or after it loads).
+    setProblem(null);
+    setResult(null);
+    setError("");
+    setHint("");
+    setLoadError("");
 
-      client.get("/courses").then((coursesRes) => {
-        const c = coursesRes.data.find((x) => x.id === Number(courseId));
-        if (c) setCourseKey(c.key);
-      });
+    client
+      .get(`/problems/${id}`)
+      .then((res) => {
+        setProblem(res.data);
+        setCode(res.data.starter_code);
 
-      client.get("/problems", { params: { course_id: courseId, difficulty: res.data.difficulty } }).then((listRes) => {
-        const ids = listRes.data.map((p) => p.id);
-        const index = ids.indexOf(Number(id));
-        setSiblingIds({
-          prevId: index > 0 ? ids[index - 1] : null,
-          nextId: index >= 0 && index < ids.length - 1 ? ids[index + 1] : null,
+        client.get("/courses").then((coursesRes) => {
+          const c = coursesRes.data.find((x) => x.id === Number(courseId));
+          if (c) setCourseKey(c.key);
         });
+
+        client
+          .get("/problems", { params: { course_id: courseId, difficulty: res.data.difficulty } })
+          .then((listRes) => {
+            const ids = listRes.data.map((p) => p.id);
+            const index = ids.indexOf(Number(id));
+            setSiblingIds({
+              prevId: index > 0 ? ids[index - 1] : null,
+              nextId: index >= 0 && index < ids.length - 1 ? ids[index + 1] : null,
+            });
+          });
+      })
+      .catch((err) => {
+        setLoadError(err.response?.data?.error || "Could not load this problem.");
       });
-    });
   }, [id, courseId]);
 
   async function handleRun() {
@@ -65,6 +81,17 @@ export default function Solve() {
     } finally {
       setHintLoading(false);
     }
+  }
+
+  if (loadError) {
+    return (
+      <div className="mooc-page pt-4" style={{ maxWidth: 640 }}>
+        <Link to={`/courses/${courseId}/practice`} className="btn btn-outline-primary btn-sm mb-3">
+          ← Back to Practice
+        </Link>
+        <div className="alert alert-warning">🔒 {loadError}</div>
+      </div>
+    );
   }
 
   if (!problem) return <div className="mooc-page pt-4 text-body-secondary">Loading...</div>;

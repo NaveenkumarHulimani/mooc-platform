@@ -44,6 +44,21 @@ def level_complete(user_id: int, course_id: int, difficulty: str, cycle_started_
     return passed_count == len(problem_ids)
 
 
+def is_level_unlocked(user_id: int, course_id: int, difficulty: str) -> bool:
+    """Easy is always open; Medium/Hard require every problem in each preceding
+    difficulty to have been solved during the current enrollment cycle."""
+    if difficulty not in DIFFICULTIES:
+        return False
+    idx = DIFFICULTIES.index(difficulty)
+    if idx == 0:
+        return True
+    enrollment = get_or_create_enrollment(user_id, course_id)
+    return all(
+        level_complete(user_id, course_id, DIFFICULTIES[i], enrollment.cycle_started_at)
+        for i in range(idx)
+    )
+
+
 def _serialize_course(course: Course, user_id: int) -> dict:
     enrollment = get_or_create_enrollment(user_id, course.id)
     levels = {d: level_complete(user_id, course.id, d, enrollment.cycle_started_at) for d in DIFFICULTIES}

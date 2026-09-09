@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import client from "../api/client";
 import { setSession } from "../auth";
 
@@ -9,6 +9,8 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const expired = searchParams.get("expired") === "1";
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -17,7 +19,7 @@ export default function Login() {
     try {
       const res = await client.post("/auth/login", { email, password });
       setSession(res.data.token, res.data.user);
-      navigate("/dashboard");
+      navigate("/courses");
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");
     } finally {
@@ -32,6 +34,11 @@ export default function Login() {
           <span className="mooc-eyebrow">Welcome back</span>
           <h2 className="mooc-page-title mt-1">Log in</h2>
         </div>
+        {expired && (
+          <div className="alert alert-warning py-2 small">
+            Your session expired (logins last 15 minutes) — log in again to continue.
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="form-label">Email</label>

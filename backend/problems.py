@@ -3,6 +3,7 @@ import json
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
+from courses import is_level_unlocked
 from models import Problem, Submission, db
 
 problems_bp = Blueprint("problems", __name__, url_prefix="/api/problems")
@@ -39,6 +40,9 @@ def list_problems():
     course_id = request.args.get("course_id", type=int)
     difficulty = request.args.get("difficulty")
 
+    if course_id and difficulty and not is_level_unlocked(user_id, course_id, difficulty.lower()):
+        return jsonify({"error": f"Complete the previous level to unlock {difficulty}."}), 403
+
     query = Problem.query
     if course_id:
         query = query.filter_by(course_id=course_id)
@@ -56,4 +60,8 @@ def get_problem(problem_id: int):
     problem = db.session.get(Problem, problem_id)
     if not problem:
         return jsonify({"error": "problem not found"}), 404
+
+    if not is_level_unlocked(user_id, problem.course_id, problem.difficulty):
+        return jsonify({"error": f"Complete the previous level to unlock {problem.difficulty}."}), 403
+
     return jsonify(_serialize(problem, user_id))
