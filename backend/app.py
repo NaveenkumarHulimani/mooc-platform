@@ -53,4 +53,9 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    # use_reloader=False: this folder is under OneDrive sync, whose periodic mtime
+    # touches were spuriously triggering Werkzeug's stat reloader, spawning a
+    # growing chain of stale worker processes that intermittently served requests
+    # with an outdated environment (e.g. missing .env changes). Restart manually
+    # after backend edits instead.
+    app.run(debug=True, port=5000, use_reloader=False)
