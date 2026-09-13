@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import client from "../api/client";
 
-const MONACO_LANGUAGE = { python: "python", java: "java", c: "c" };
+const MONACO_LANGUAGE = { python: "python", java: "java", c: "c", javascript: "javascript" };
 const DIFFICULTY_PILL = { easy: "mooc-pill-easy", medium: "mooc-pill-medium", hard: "mooc-pill-hard" };
 
 export default function Solve() {

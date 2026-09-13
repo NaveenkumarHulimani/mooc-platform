@@ -27,9 +27,15 @@ COURSES = [
         "tag": "Programming",
         "description": "Pointers, manual memory, and the low-level thinking that everything else is built on — solved with real, executed code.",
     },
+    {
+        "key": "javascript",
+        "title": "JavaScript Programming",
+        "tag": "Programming",
+        "description": "Dynamic typing, first-class functions, and the async-first mindset the web is built on — solved with real, executed code.",
+    },
 ]
 
-# Each problem template carries the same statement/test-cases across all three courses,
+# Each problem template carries the same statement/test-cases across all courses,
 # with per-language starter code — this is content shared once and split per course below,
 # not duplicated by hand.
 PROBLEM_TEMPLATES = [
@@ -61,6 +67,10 @@ PROBLEM_TEMPLATES = [
                 "    // write your code here\n"
                 "    return 0;\n"
                 "}\n"
+            ),
+            "javascript": (
+                "const [a, b] = require('fs').readFileSync(0, 'utf-8').trim().split(' ').map(Number);\n"
+                "// write your code here\n"
             ),
         },
         "test_cases": [
@@ -94,6 +104,10 @@ PROBLEM_TEMPLATES = [
                 "    // write your code here\n"
                 "    return 0;\n"
                 "}\n"
+            ),
+            "javascript": (
+                "const s = require('fs').readFileSync(0, 'utf-8').trim();\n"
+                "// write your code here\n"
             ),
         },
         "test_cases": [
@@ -130,6 +144,10 @@ PROBLEM_TEMPLATES = [
                 "    return 0;\n"
                 "}\n"
             ),
+            "javascript": (
+                "const s = require('fs').readFileSync(0, 'utf-8').trim();\n"
+                "// write your code here\n"
+            ),
         },
         "test_cases": [
             {"input": "programming", "expected_output": "3"},
@@ -163,6 +181,10 @@ PROBLEM_TEMPLATES = [
                 "    // write your code here\n"
                 "    return 0;\n"
                 "}\n"
+            ),
+            "javascript": (
+                "const n = Number(require('fs').readFileSync(0, 'utf-8').trim());\n"
+                "// write your code here\n"
             ),
         },
         "test_cases": [
@@ -200,6 +222,10 @@ PROBLEM_TEMPLATES = [
                 "    return 0;\n"
                 "}\n"
             ),
+            "javascript": (
+                "const n = Number(require('fs').readFileSync(0, 'utf-8').trim());\n"
+                "// write your code here\n"
+            ),
         },
         "test_cases": [
             {"input": "0", "expected_output": "0"},
@@ -235,6 +261,10 @@ PROBLEM_TEMPLATES = [
                 "    // write your code here\n"
                 "    return 0;\n"
                 "}\n"
+            ),
+            "javascript": (
+                "const n = require('fs').readFileSync(0, 'utf-8').trim();\n"
+                "// write your code here\n"
             ),
         },
         "test_cases": [
@@ -273,6 +303,10 @@ PROBLEM_TEMPLATES = [
                 "    return 0;\n"
                 "}\n"
             ),
+            "javascript": (
+                "const sentence = require('fs').readFileSync(0, 'utf-8').trim();\n"
+                "// write your code here\n"
+            ),
         },
         "test_cases": [
             {"input": "the quick brown fox", "expected_output": "quick"},
@@ -309,6 +343,10 @@ PROBLEM_TEMPLATES = [
                 "    return 0;\n"
                 "}\n"
             ),
+            "javascript": (
+                "const s = require('fs').readFileSync(0, 'utf-8').trim();\n"
+                "// write your code here\n"
+            ),
         },
         "test_cases": [
             {"input": "{[()]}", "expected_output": "Balanced"},
@@ -336,34 +374,39 @@ def seed():
         else:
             print("Admin account already exists — skipping.")
 
-        if Course.query.count() > 0:
-            print(f"Courses table already has {Course.query.count()} rows — skipping seed.")
-            return
-
-        courses_by_key = {}
+        # Idempotent per-course: only creates courses (and their problems) that don't
+        # already exist yet, so re-running this after adding a new course to COURSES
+        # never touches or duplicates existing courses/problems/student progress.
+        new_course_count = 0
+        new_problem_count = 0
         for c in COURSES:
+            course = Course.query.filter_by(key=c["key"]).first()
+            if course:
+                continue
+
             course = Course(key=c["key"], title=c["title"], tag=c["tag"], description=c["description"])
             db.session.add(course)
-            courses_by_key[c["key"]] = course
-        db.session.flush()  # assign ids without a full commit yet
+            db.session.flush()  # assign an id without a full commit yet
+            new_course_count += 1
 
-        problem_count = 0
-        for template in PROBLEM_TEMPLATES:
-            for key, course in courses_by_key.items():
+            for template in PROBLEM_TEMPLATES:
                 db.session.add(
                     Problem(
                         course_id=course.id,
                         title=template["title"],
                         difficulty=template["difficulty"],
                         description=template["description"],
-                        starter_code=template["starter_code"][key],
+                        starter_code=template["starter_code"][c["key"]],
                         test_cases=json.dumps(template["test_cases"]),
                     )
                 )
-                problem_count += 1
+                new_problem_count += 1
 
         db.session.commit()
-        print(f"Seeded {len(courses_by_key)} courses and {problem_count} problems.")
+        if new_course_count:
+            print(f"Seeded {new_course_count} new course(s) and {new_problem_count} new problem(s).")
+        else:
+            print("All courses already exist — nothing new to seed.")
 
 
 if __name__ == "__main__":

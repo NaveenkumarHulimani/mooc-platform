@@ -1,0 +1,322 @@
+{
+  "info": {
+    "name": "MOOC Platform API",
+    "description": "All API endpoints for the Online Coding MOOC Platform. Run 'Login' first (or 'Register') — it auto-saves the JWT into the {{jwt_token}} collection variable, which every other authenticated request uses automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:5000" },
+    { "key": "jwt_token", "value": "" },
+    { "key": "course_id", "value": "1" },
+    { "key": "problem_id", "value": "1" },
+    { "key": "attempt_id", "value": "1" },
+    { "key": "admin_email", "value": "admin@mooc.local" },
+    { "key": "admin_password", "value": "admin123" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{jwt_token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/health", "host": ["{{base_url}}"], "path": ["api", "health"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const data = pm.response.json();",
+                  "  pm.collectionVariables.set('jwt_token', data.token);",
+                  "  console.log('Saved jwt_token from register response');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Student\",\n  \"email\": \"teststudent@example.com\",\n  \"password\": \"pass1234\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  pm.collectionVariables.set('jwt_token', data.token);",
+                  "  console.log('Saved jwt_token from login response');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"teststudent@example.com\",\n  \"password\": \"pass1234\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "item": [
+        {
+          "name": "List Courses",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/courses", "host": ["{{base_url}}"], "path": ["api", "courses"] }
+          }
+        },
+        {
+          "name": "Get One Course",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/courses/{{course_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "courses", "{{course_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Problems",
+      "item": [
+        {
+          "name": "List Problems (by course + difficulty)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/problems?course_id={{course_id}}&difficulty=easy",
+              "host": ["{{base_url}}"],
+              "path": ["api", "problems"],
+              "query": [
+                { "key": "course_id", "value": "{{course_id}}" },
+                { "key": "difficulty", "value": "easy" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get One Problem",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/problems/{{problem_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "problems", "{{problem_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Submit",
+      "item": [
+        {
+          "name": "Submit Code (practice)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"problem_id\": {{problem_id}},\n  \"code\": \"a, b = map(int, input().split())\\nprint(a + b)\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/submit", "host": ["{{base_url}}"], "path": ["api", "submit"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Exam",
+      "item": [
+        {
+          "name": "Start (or Resume) Exam",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json();",
+                  "  if (data.attempt_id) { pm.collectionVariables.set('attempt_id', data.attempt_id); }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_id\": {{course_id}}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/exam/start", "host": ["{{base_url}}"], "path": ["api", "exam", "start"] }
+          }
+        },
+        {
+          "name": "Get Current In-Progress Attempt",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/exam/current?course_id={{course_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "exam", "current"],
+              "query": [{ "key": "course_id", "value": "{{course_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Finalize Exam",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    { \"problem_id\": 1, \"code\": \"a, b = map(int, input().split())\\nprint(a + b)\" },\n    { \"problem_id\": 10, \"code\": \"print(1)\" },\n    { \"problem_id\": 19, \"code\": \"print(1)\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/exam/{{attempt_id}}/finalize",
+              "host": ["{{base_url}}"],
+              "path": ["api", "exam", "{{attempt_id}}", "finalize"]
+            },
+            "description": "Replace the problem_id values with the actual question_ids returned by Start Exam — they're randomised per attempt."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Certificate",
+      "item": [
+        {
+          "name": "Get Certificate Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/certificate?course_id={{course_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "certificate"],
+              "query": [{ "key": "course_id", "value": "{{course_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Download Certificate PDF",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/certificate/download?course_id={{course_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "certificate", "download"],
+              "query": [{ "key": "course_id", "value": "{{course_id}}" }]
+            },
+            "description": "In Postman, use 'Send and Download' to save the PDF response to a file."
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Hint",
+      "item": [
+        {
+          "name": "Get AI Hint",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"problem_id\": {{problem_id}},\n  \"code\": \"a, b = map(int, input().split())\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": { "raw": "{{base_url}}/api/ai/hint", "host": ["{{base_url}}"], "path": ["api", "ai", "hint"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/dashboard", "host": ["{{base_url}}"], "path": ["api", "dashboard"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin (session-based, not JWT)",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/x-www-form-urlencoded" }],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "email", "value": "{{admin_email}}" },
+                { "key": "password", "value": "{{admin_password}}" }
+              ]
+            },
+            "url": { "raw": "{{base_url}}/admin/login", "host": ["{{base_url}}"], "path": ["admin", "login"] },
+            "description": "Uses a form body, not JSON. Enable Postman's cookie jar so the resulting session cookie carries over to /admin/ requests. Only succeeds if the account has is_admin=true."
+          }
+        },
+        {
+          "name": "Admin Logout",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/admin/logout", "host": ["{{base_url}}"], "path": ["admin", "logout"] }
+          }
+        }
+      ]
+    }
+  ]
+}

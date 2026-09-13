@@ -7,6 +7,7 @@ LANGUAGE_CONFIG = {
     "python": {"language": "python", "version": "3.12.0", "filename": "main.py"},
     "java": {"language": "java", "version": "15.0.2", "filename": "Main.java"},
     "c": {"language": "c", "version": "10.2.0", "filename": "main.c"},
+    "javascript": {"language": "javascript", "version": "20.11.1", "filename": "main.js"},
 }
 
 
