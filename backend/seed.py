@@ -1,12 +1,13 @@
 import json
+import os
 
 from werkzeug.security import generate_password_hash
 
 from app import create_app
 from models import Course, Problem, User, db
 
-ADMIN_EMAIL = "admin@mooc.local"
-ADMIN_PASSWORD = "admin123"
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@mooc.local")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
 COURSES = [
     {

@@ -1,8 +1,12 @@
 import axios from "axios";
 import { clearSession } from "../auth";
 
+// In local dev this points straight at the Flask dev server. In production, the
+// build sets VITE_API_BASE_URL=/api so requests go through nginx's same-origin
+// reverse proxy instead of a hardcoded localhost address that means nothing in a
+// visitor's own browser.
 const client = axios.create({
-  baseURL: "http://127.0.0.1:5000/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:5000/api",
 });
 
 client.interceptors.request.use((config) => {
